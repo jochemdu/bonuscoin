@@ -2,6 +2,8 @@
 #include "ui_intro.h"
 #include "util.h"
 
+#include "guiutil.h"
+
 #include <QFileDialog>
 #include <QSettings>
 #include <QMessageBox>
@@ -140,8 +142,10 @@ void Intro::pickDataDirectory()
     QSettings settings;
     /* If data directory provided on command line, no need to look at settings
        or show a picking dialog */
-    if(!GetArg("-datadir", "").empty())
+
+    if(!GetArg("-datadir", "").empty()) {
         return;
+    }
     /* 1) Default data directory for operating system */
     QString dataDir = getDefaultDataDirectory();
     /* 2) Allow QSettings to override default dir */
@@ -172,7 +176,12 @@ void Intro::pickDataDirectory()
 
         settings.setValue("strDataDir", dataDir);
     }
-    SoftSetArg("-datadir", dataDir.toStdString());
+    /* Only override -datadir if different from the default, to make it possible to
+         * override -datadir in the bitcoin.conf file in the default data directory
+         * (to be consistent with bitcoind behavior)
+         */
+    if(dataDir != getDefaultDataDirectory())
+        SoftSetArg("-datadir", GUIUtil::qstringToBoostPath(dataDir).string()); // use OS locale for path setting
 }
 
 void Intro::setStatus(int status, const QString &message, quint64 bytesAvailable)

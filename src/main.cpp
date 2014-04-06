@@ -76,6 +76,9 @@ int64 nHPSTimerStart = 0;
 // Settings
 int64 nTransactionFee = 0;
 
+//FORK PARAMETERS
+int const HARD_FORK_HEIGHT_A = 12870;
+int const SOFT_FORK_DISCONNECT_HEIGHT = HARD_FORK_HEIGHT_A - (720*2);
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -1469,6 +1472,8 @@ unsigned int static KimotoGravityWell(const CBlockIndex* pindexLast, const CBloc
 		return Params().ProofOfWorkLimit().GetCompact();
 	}
         
+    int64 LatestBlockTime = BlockLastSolved->GetBlockTime();
+
     for (unsigned int i = 1; BlockReading && BlockReading->nHeight > 0; i++) {
 		if (PastBlocksMax > 0 && i > PastBlocksMax) { 
 			break; 
@@ -1482,15 +1487,26 @@ unsigned int static KimotoGravityWell(const CBlockIndex* pindexLast, const CBloc
 		}
 		PastDifficultyAveragePrev = PastDifficultyAverage;
                 
-		PastRateActualSeconds = BlockLastSolved->GetBlockTime() - BlockReading->GetBlockTime();
+        if (LatestBlockTime < BlockReading->GetBlockTime()) {
+            if (BlockReading->nHeight > HARD_FORK_HEIGHT_A) {
+                LatestBlockTime = BlockReading->GetBlockTime();
+            }
+        }
+
+        PastRateActualSeconds = LatestBlockTime - BlockReading->GetBlockTime();
 		PastRateTargetSeconds = TargetBlocksSpacingSeconds * PastBlocksMass;
 		PastRateAdjustmentRatio = double(1);
-		if (PastRateActualSeconds < 0) {
-			PastRateActualSeconds = 0; 
-		}
-		if (PastRateActualSeconds != 0 && PastRateTargetSeconds != 0) {
+
+        if (BlockReading->nHeight > HARD_FORK_HEIGHT_A) {
+            if (PastRateActualSeconds < 1) { PastRateActualSeconds = 1; }
+        } else {
+            if (PastRateActualSeconds < 0) { PastRateActualSeconds = 0; }
+        }
+
+        if (PastRateActualSeconds != 0 && PastRateTargetSeconds != 0) {
 			PastRateAdjustmentRatio = double(PastRateTargetSeconds) / double(PastRateActualSeconds);
 		}
+
         EventHorizonDeviation = 1 + (0.7084 * pow((double(PastBlocksMass)/double(72)), -1.228));
 		EventHorizonDeviationFast = EventHorizonDeviation;
 		EventHorizonDeviationSlow = 1 / EventHorizonDeviation;
@@ -1501,14 +1517,17 @@ unsigned int static KimotoGravityWell(const CBlockIndex* pindexLast, const CBloc
 				break; 
 			}
 		}
+
 		if (BlockReading->pprev == NULL) { 
 			assert(BlockReading); 
 			break; 
 		}
+
 		BlockReading = BlockReading->pprev;
 	}
 
 	CBigNum bnNew(PastDifficultyAverage);
+
 	if (PastRateActualSeconds != 0 && PastRateTargetSeconds != 0) {
 		bnNew *= PastRateActualSeconds;
 		bnNew /= PastRateTargetSeconds;
@@ -1548,6 +1567,7 @@ unsigned int static GetNextWorkRequired_V2(const CBlockIndex* pindexLast, const 
 
 unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBlockHeader *pblock)
 {
+
     int DiffMode = 0; //BTCf
 
     //switch to KGW after ~4 days
@@ -1559,7 +1579,7 @@ unsigned int static GetNextWorkRequired(const CBlockIndex* pindexLast, const CBl
 
     if (DiffMode == 0) {
         return GetNextWorkRequired_V0(pindexLast, pblock);
-    } else if (DiffMode == 1) {			//BTCs
+    } else if (DiffMode == 1) {     //BTCs
         return GetNextWorkRequired_V1(pindexLast, pblock);
     } else if (DiffMode == 2) {		//KGW
         return GetNextWorkRequired_V2(pindexLast, pblock);
@@ -3496,10 +3516,6 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         return true;
     }
 
-
-
-
-
     if (strCommand == "version")
     {
         // Each connection can only send one version message
@@ -3514,10 +3530,16 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         CAddress addrFrom;
         uint64 nNonce = 1;
         vRecv >> pfrom->nVersion >> pfrom->nServices >> nTime >> addrMe;
-        if (pfrom->nVersion < MIN_PROTO_VERSION)
+
+        //DISCONNECT OUT-DATED CLIENTS
+        if (pfrom->nVersion < MIN_PROTO_VERSION && nBestHeight > SOFT_FORK_DISCONNECT_HEIGHT)
         {
-            // Since February 20, 2012, the protocol is initiated at version 209,
-            // and earlier versions are no longer supported
+            printf("partner %s using obsolete version %i; disconnecting\n", pfrom->addr.ToString().c_str(), pfrom->nVersion);
+            pfrom->fDisconnect = true;
+            return false;
+        //HANDLE SOFT FORKS
+        } else if (pfrom->nVersion < (MIN_PROTO_VERSION-1)){
+            //step back a version until if we're under the soft_fork height
             printf("partner %s using obsolete version %i; disconnecting\n", pfrom->addr.ToString().c_str(), pfrom->nVersion);
             pfrom->fDisconnect = true;
             return false;

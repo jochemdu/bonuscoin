@@ -52,6 +52,7 @@ public:
         
         //// debug print
         hashGenesisBlock = genesis.GetHash();
+        /// Don't uncomment these lines in production. This will break -datadir!
 //        while (hashGenesisBlock > bnProofOfWorkLimit.getuint256()){
 //            if (++genesis.nNonce==0) break;
 //            hashGenesisBlock = genesis.GetHash();
@@ -67,7 +68,11 @@ public:
 
         //TODO: FIX THIS TO WHATEVER DOMAINS
         vSeeds.push_back(CDNSSeedData("bonuscoin.net", "bonuscoin.net"));
-        vSeeds.push_back(CDNSSeedData("minerspool.net", "minerspool.net"));
+        vSeeds.push_back(CDNSSeedData("node1.bonuscoin.net", "node1.bonuscoin.net"));
+        vSeeds.push_back(CDNSSeedData("node2.bonuscoin.net", "node2.bonuscoin.net"));
+        vSeeds.push_back(CDNSSeedData("node3.bonuscoin.net", "node3.bonuscoin.net"));
+        vSeeds.push_back(CDNSSeedData("node4.bonuscoin.net", "node4.bonuscoin.net"));
+        vSeeds.push_back(CDNSSeedData("node5.bonuscoin.net", "node5.bonuscoin.net"));
 
         base58Prefixes[PUBKEY_ADDRESS] = 0x19; //'B'
         base58Prefixes[SCRIPT_ADDRESS] = 30;
@@ -123,14 +128,15 @@ public:
         
         //// debug print
         hashGenesisBlock = genesis.GetHash();
+        /// Don't uncomment these lines in production. This will break -datadir!
         //while (hashGenesisBlock > bnProofOfWorkLimit.getuint256()){
         //    if (++genesis.nNonce==0) break;
         //   hashGenesisBlock = genesis.GetHash();
         //}
 
-        printf("%s\n", hashGenesisBlock.ToString().c_str());
-        printf("%s\n", genesis.hashMerkleRoot.ToString().c_str());
-        genesis.print();
+        //printf("%s\n", hashGenesisBlock.ToString().c_str());
+        //printf("%s\n", genesis.hashMerkleRoot.ToString().c_str());
+        //genesis.print();
 
         vFixedSeeds.clear();
         vSeeds.clear();
@@ -166,15 +172,16 @@ public:
         strDataDir = "regtest";
         
         //// debug print
-        hashGenesisBlock = genesis.GetHash();
+        /// Don't uncomment these lines in production. This will break -datadir!
+        //hashGenesisBlock = genesis.GetHash();
         //while (hashGenesisBlock > bnProofOfWorkLimit.getuint256()){
         //    if (++genesis.nNonce==0) break;
         //    hashGenesisBlock = genesis.GetHash();
         //}
 
-        printf("%s\n", hashGenesisBlock.ToString().c_str());
-        printf("%s\n", genesis.hashMerkleRoot.ToString().c_str());
-        genesis.print();
+        //printf("2222%s\n", hashGenesisBlock.ToString().c_str());
+        //printf("2222%s\n", genesis.hashMerkleRoot.ToString().c_str());
+        //genesis.print();
 
         // assert(hashGenesisBlock == uint256("0x13d8d31dde96874006da503dd2b63fa68c698dc823334359e417aa3a92f80433"));
 

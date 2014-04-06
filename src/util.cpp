@@ -1097,8 +1097,9 @@ const boost::filesystem::path &GetDataDir(bool fNetSpecific)
 
     // This can be called during exceptions by printf, so we cache the
     // value so we don't have to do memory allocations after that.
-    if (fCachedPath[fNetSpecific])
+    if (fCachedPath[fNetSpecific]) {
         return path;
+    }
 
     LOCK(csPathCached);
 
