@@ -1,4 +1,4 @@
-Bonus 0.9.8.0 [BNS]
+Bonus 0.9.8.1 [BNS]
 
 Proof of Work SHA256D Cryptocurrency based on Bitcoin 0.8.99
 
